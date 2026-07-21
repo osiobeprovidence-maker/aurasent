@@ -1,0 +1,93 @@
+import { motion, AnimatePresence } from 'motion/react';
+import { X, Heart, ShoppingBag } from 'lucide-react';
+import { Product } from '../types';
+
+interface WishlistDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  items: Product[];
+  onRemove: (id: string) => void;
+  onMoveToCart: (product: Product) => void;
+}
+
+export default function WishlistDrawer({ isOpen, onClose, items, onRemove, onMoveToCart }: WishlistDrawerProps) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 z-[60] backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-ivory z-[70] shadow-2xl flex flex-col"
+          >
+            <div className="p-6 border-b border-beige flex items-center justify-between">
+              <h2 className="text-xl font-serif tracking-widest uppercase">Your Wishlist ({items.length})</h2>
+              <button onClick={onClose} className="p-2 hover:text-gold transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-8 space-y-8">
+              {items.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
+                  <div className="w-20 h-20 rounded-full border border-beige flex items-center justify-center text-beige">
+                    <Heart size={32} />
+                  </div>
+                  <div>
+                    <p className="text-charcoal font-serif text-xl mb-2">No Favorites</p>
+                    <p className="text-charcoal/40 text-xs tracking-widest uppercase">Curate your reserve</p>
+                  </div>
+                </div>
+              ) : (
+                items.map((item) => (
+                  <div key={item.id} className="flex gap-6 pb-6 border-b border-beige last:border-0">
+                    <div className="w-24 aspect-[3/4] bg-white border border-beige p-1 rounded-sm shrink-0">
+                      <div className="w-full h-full bg-beige overflow-hidden">
+                        <img 
+                          src={item.images[0]} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                      <div>
+                        <p className="text-[9px] tracking-[0.3em] uppercase text-gold font-bold mb-1">{item.brand}</p>
+                        <h3 className="font-serif text-lg truncate mb-1">{item.name}</h3>
+                        <p className="text-sm font-light tracking-widest text-charcoal/60">${item.price}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => onMoveToCart(item)}
+                          className="btn-outline py-2 px-6 flex-1 text-[9px]"
+                        >
+                          Add to Bag
+                        </button>
+                        <button 
+                          onClick={() => onRemove(item.id)}
+                          className="p-2 text-beige hover:text-red-400 transition-colors"
+                        >
+                          <X size={16} strokeWidth={1.5} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}

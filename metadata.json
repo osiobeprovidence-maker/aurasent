@@ -1,0 +1,6 @@
+{
+  "name": "AuraScent",
+  "description": "A modern luxury perfume e-commerce website offering premium fragrances with an elegant, minimal design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
