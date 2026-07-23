@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Store, Users, Package, ShoppingBag, BarChart3, 
   Plus, Trash2, Edit3, Search, Filter, 
-  ChevronRight, TrendingUp, DollarSign, Clock,
+  ChevronRight, DollarSign, Clock,
   ShieldCheck, UserPlus, Settings, LogOut, Palette
 } from 'lucide-react';
 import { useQuery, useMutation } from 'convex/react';
@@ -17,8 +17,12 @@ type DashboardTab = 'overview' | 'orders' | 'products' | 'customers' | 'staff' |
 export default function OwnerDashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const products = (useQuery(api.products.list) ?? []) as Product[];
+  const orders = (useQuery(api.orders.list) ?? []) as Order[];
+  const customers = (useQuery(api.customers.list) ?? []) as Customer[];
+  const staffMembers = (useQuery(api.staff.list) ?? []) as Staff[];
   const createProduct = useMutation(api.products.create);
   const removeProductMutation = useMutation(api.products.remove);
+  const updateOrderStatusMutation = useMutation(api.orders.updateStatus);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   
   const saveNewProduct = async (productData: any) => {
@@ -38,33 +42,18 @@ export default function OwnerDashboard() {
     setIsAddingProduct(false);
   };
   
-  // Mock Data for Dashboard
-  const [orders, setOrders] = useState<Order[]>([
-    { id: '#AS-9021', customerName: 'Julian Rose', date: 'Oct 12, 2024', total: 450.00, status: 'Processing', items: 2 },
-    { id: '#AS-9022', customerName: 'Elena Vance', date: 'Oct 12, 2024', total: 125.00, status: 'Pending', items: 1 },
-    { id: '#AS-9023', customerName: 'Marcus Thorne', date: 'Oct 11, 2024', total: 890.00, status: 'Shipped', items: 4 },
-    { id: '#AS-9024', customerName: 'Sarah Jenkins', date: 'Oct 10, 2024', total: 210.00, status: 'Delivered', items: 1 },
-  ]);
-
-  const [customers] = useState<Customer[]>([
-    { id: '1', name: 'Julian Rose', email: 'j.rose@atelier.com', orders: 12, spent: 2450.00, lastOrder: '2 days ago' },
-    { id: '2', name: 'Elena Vance', email: 'elena.v@scent.com', orders: 5, spent: 890.00, lastOrder: 'Today' },
-  ]);
-
-  const [staff, setStaff] = useState<Staff[]>([
-    { id: '1', name: 'Julian Rose', role: 'Master Perfumer' },
-    { id: '2', name: 'Elena Vance', role: 'Store Manager' }
-  ]);
-
+  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+  const activeOrders = orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').length;
+  
   const stats = [
-    { label: 'Total Revenue', value: '$24,590', change: '+12.5%', icon: DollarSign, color: 'text-green-500' },
-    { label: 'Active Orders', value: '48', change: '+5', icon: ShoppingBag, color: 'text-gold' },
-    { label: 'Total Customers', value: '1,240', change: '+18%', icon: Users, color: 'text-blue-500' },
-    { label: 'Conversion Rate', value: '3.4%', change: '+0.4%', icon: TrendingUp, color: 'text-purple-500' },
+    { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, change: '', icon: DollarSign, color: 'text-green-500' },
+    { label: 'Active Orders', value: activeOrders.toString(), change: '', icon: ShoppingBag, color: 'text-gold' },
+    { label: 'Total Customers', value: customers.length.toString(), change: '', icon: Users, color: 'text-blue-500' },
+    { label: 'Products', value: products.length.toString(), change: '', icon: Package, color: 'text-purple-500' },
   ];
 
-  const updateOrderStatus = (id: string, newStatus: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+  const updateOrderStatus = async (id: string, newStatus: string) => {
+    await updateOrderStatusMutation({ id, status: newStatus });
   };
 
   const removeProduct = async (id: string) => {
@@ -362,7 +351,7 @@ export default function OwnerDashboard() {
                       Team Authorization
                     </h3>
                     <div className="space-y-6">
-                      {staff.map((member) => (
+                      {staffMembers.map((member) => (
                         <div key={member.id} className="flex items-center justify-between p-4 hover:bg-beige/30 rounded-2xl transition-colors group">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-beige rounded-full flex items-center justify-center text-xs font-bold text-gold">

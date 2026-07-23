@@ -71,12 +71,28 @@ export default defineSchema({
   }),
 
   orders: defineTable({
+    id: v.string(),
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     date: v.string(),
     total: v.number(),
     status: v.string(),
     items: v.number(),
+  }),
+
+  customers: defineTable({
+    id: v.string(),
+    name: v.string(),
+    email: v.string(),
+    orders: v.number(),
+    spent: v.number(),
+    lastOrder: v.string(),
+  }),
+
+  staff: defineTable({
+    id: v.string(),
+    name: v.string(),
+    role: v.string(),
   }),
 
   storeConfig: defineTable({
