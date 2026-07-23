@@ -8,6 +8,8 @@ import {
   signOut,
   User
 } from 'firebase/auth';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { auth, googleProvider } from '../lib/firebase';
 
 interface AuthContextType {
@@ -25,14 +27,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const upsertUser = useMutation(api.users.upsert);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
       setLoading(false);
+
+      if (firebaseUser) {
+        const role = firebaseUser.email === 'riderezzy@gmail.com' ? 'owner' : 'user';
+        upsertUser({
+          firebaseUid: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+          role,
+          image: firebaseUser.photoURL || undefined,
+        });
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [upsertUser]);
 
   const signInWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);

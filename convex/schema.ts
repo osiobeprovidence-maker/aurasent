@@ -70,6 +70,14 @@ export default defineSchema({
     status: v.optional(v.string()),
   }),
 
+  users: defineTable({
+    firebaseUid: v.string(),
+    email: v.string(),
+    name: v.string(),
+    role: v.string(),
+    image: v.optional(v.string()),
+  }),
+
   orders: defineTable({
     id: v.string(),
     customerName: v.string(),
