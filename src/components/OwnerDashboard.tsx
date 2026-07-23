@@ -6,8 +6,9 @@ import {
   ChevronRight, TrendingUp, DollarSign, Clock,
   ShieldCheck, UserPlus, Settings, LogOut, Palette
 } from 'lucide-react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Order, Customer, Product, Staff } from '../types';
-import { products as initialProducts } from '../data';
 import ProductForm from './ProductForm';
 import StoreCustomizer from './StoreCustomizer';
 
@@ -15,18 +16,25 @@ type DashboardTab = 'overview' | 'orders' | 'products' | 'customers' | 'staff' |
 
 export default function OwnerDashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const products = (useQuery(api.products.list) ?? []) as Product[];
+  const createProduct = useMutation(api.products.create);
+  const removeProductMutation = useMutation(api.products.remove);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   
-  const saveNewProduct = (productData: any) => {
-    const newProduct: Product = {
-      ...productData,
+  const saveNewProduct = async (productData: any) => {
+    await createProduct({
       id: Date.now().toString(),
+      name: productData.name,
+      brand: productData.brand || 'AuraScent',
+      price: productData.price || 0,
       rating: 5,
+      category: productData.category || 'Unisex',
+      description: productData.description || '',
+      images: productData.images || [],
+      notes: productData.notes || { top: [], middle: [], base: [] },
+      ingredients: productData.ingredients || [],
       reviews: [],
-      ingredients: []
-    };
-    setProducts(prev => [newProduct, ...prev]);
+    });
     setIsAddingProduct(false);
   };
   
@@ -59,8 +67,8 @@ export default function OwnerDashboard() {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
   };
 
-  const removeProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const removeProduct = async (id: string) => {
+    await removeProductMutation({ id });
   };
 
   const navItems = [

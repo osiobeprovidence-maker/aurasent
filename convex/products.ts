@@ -54,3 +54,16 @@ export const create = mutation({
     return await ctx.db.insert("products", args);
   },
 });
+
+export const remove = mutation({
+  args: { id: v.string() },
+  handler: async (ctx, args) => {
+    const product = await ctx.db
+      .query("products")
+      .filter((q) => q.eq(q.field("id"), args.id))
+      .first();
+    if (product) {
+      await ctx.db.delete(product._id);
+    }
+  },
+});

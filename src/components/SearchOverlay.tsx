@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Search as SearchIcon, ArrowRight } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Product } from '../types';
-import { products } from '../data';
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -12,15 +13,16 @@ interface SearchOverlayProps {
 
 export default function SearchOverlay({ isOpen, onClose, onViewProduct }: SearchOverlayProps) {
   const [query, setQuery] = useState('');
+  const allProducts = (useQuery(api.products.list) ?? []) as Product[];
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
-    return products.filter(p => 
+    return allProducts.filter(p => 
       p.name.toLowerCase().includes(query.toLowerCase()) || 
       p.brand.toLowerCase().includes(query.toLowerCase()) ||
       p.category.toLowerCase().includes(query.toLowerCase())
     ).slice(0, 5);
-  }, [query]);
+  }, [query, allProducts]);
 
   const trends = ['Oud', 'Summer Florals', 'Bespoke Sets', 'Midnight Collection'];
 
