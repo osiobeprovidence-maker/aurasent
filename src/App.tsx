@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { products } from './data';
+import { useQuery } from 'convex/react';
+import { api } from '../convex/_generated/api';
 import { Product, CartItem, Category, Address } from './types';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -25,6 +26,7 @@ import { useConfig } from './context/ConfigContext';
 
 export default function App() {
   const { config } = useConfig();
+  const products = (useQuery(api.products.list) ?? []) as Product[];
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
