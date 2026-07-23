@@ -23,9 +23,11 @@ import PromoPopup from './components/PromoPopup';
 import { motion, AnimatePresence } from 'motion/react';
 import { Filter, X, Users, Sparkles, Map, Sparkle } from 'lucide-react';
 import { useConfig } from './context/ConfigContext';
+import { useAuth } from './context/AuthContext';
 
 export default function App() {
   const { config } = useConfig();
+  const { user, isOwner, logout } = useAuth();
   const products = (useQuery(api.products.list) ?? []) as Product[];
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
@@ -138,17 +140,27 @@ export default function App() {
   const handleLogin = (role: string) => {
     setIsAuthenticated(true);
     setUserRole(role);
-    if (role === 'owner') {
+    if (role === 'owner' || isOwner) {
       setUserProfile(prev => ({
         ...prev,
         name: 'Riderezzy',
         email: 'riderezzy@gmail.com'
       }));
+      setUserRole('owner');
+    }
+    if (user) {
+      setUserProfile(prev => ({
+        ...prev,
+        name: user.displayName || prev.name,
+        email: user.email || prev.email,
+        image: user.photoURL || prev.image
+      }));
     }
     setCurrentView('profile');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     setIsAuthenticated(false);
     setUserRole(null);
     setCurrentView('home');
