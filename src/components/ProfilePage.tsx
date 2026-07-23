@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { User, Package, Heart, Settings, LogOut, ChevronRight, MapPin, Store, Plus, Trash2, ShieldCheck, Mail, Bell } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Address, Product } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface ProfilePageProps {
   onLogout: () => void;
@@ -31,6 +34,11 @@ export default function ProfilePage({
   onRemoveAddress
 }: ProfilePageProps) {
   const [activeSection, setActiveSection] = useState<Section>('orders');
+  const { user } = useAuth();
+  const orders = (useQuery(api.orders.list) ?? []) as any[];
+  const convexUser = useQuery(api.users.getByUid, user ? { firebaseUid: user.uid } : "skip");
+
+  const userOrders = user ? orders.filter(o => o.customerEmail === user.email) : [];
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,6 +51,8 @@ export default function ProfilePage({
     }
   };
 
+  const membershipLabel = convexUser?.role === 'owner' ? 'Super Admin' : 'Standard Member';
+
   const navItems = [
     { id: 'orders', icon: Package, label: 'Order History' },
     { id: 'favorites', icon: Heart, label: 'My Favorites' },
@@ -50,11 +60,6 @@ export default function ProfilePage({
     { id: 'addresses', icon: MapPin, label: 'Address Book' },
     { id: 'preferences', icon: Settings, label: 'Preferences' },
     { id: 'logout', icon: LogOut, label: 'Sign Out', color: 'text-red-400', action: onLogout }
-  ];
-
-  const recentOrders = [
-    { id: '#AS-8821', date: 'June 12, 2024', status: 'Delivered', total: '$310.00', item: 'Midnight Obsidian' },
-    { id: '#AS-7412', date: 'April 28, 2024', status: 'Delivered', total: '$195.00', item: 'Peony Silk' }
   ];
 
   return (
@@ -78,7 +83,7 @@ export default function ProfilePage({
             </div>
             <h2 className="text-2xl font-serif mb-1">{userProfile.name}</h2>
             <p className="text-[10px] tracking-[0.2em] uppercase text-gold font-bold">
-              {userRole === 'owner' ? 'Super Admin' : 'Gold Circle'}
+              {membershipLabel}
             </p>
           </div>
 
@@ -111,40 +116,51 @@ export default function ProfilePage({
             >
               <div className="flex justify-between items-end mb-8 border-b border-beige pb-6">
                 <h3 className="text-3xl font-serif tracking-tight">Recent Orders</h3>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/40">Total 24 Orders</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/40">Total {userOrders.length} Orders</p>
               </div>
 
-              <div className="space-y-6">
-                {recentOrders.map((order, idx) => (
-                  <motion.div 
-                    key={order.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="bg-white p-8 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-8 group hover:shadow-xl transition-all border border-transparent hover:border-beige"
+              {userOrders.length > 0 ? (
+                <div className="space-y-6">
+                  {userOrders.map((order, idx) => (
+                    <motion.div 
+                      key={order.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="bg-white p-8 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-8 group hover:shadow-xl transition-all border border-transparent hover:border-beige"
+                    >
+                      <div className="flex gap-6 items-center">
+                        <div className="w-16 aspect-[3/4] bg-beige rounded-sm overflow-hidden border border-charcoal/5 flex items-center justify-center text-gold/20">
+                           <Package size={24} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-[0.2em] text-gold font-bold mb-1">{order.id}</p>
+                          <h4 className="font-serif text-xl">{order.items} item{order.items !== 1 ? 's' : ''}</h4>
+                          <p className="text-xs text-charcoal/40">{order.date}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-serif mb-1">${order.total}</p>
+                        <span className="text-[9px] uppercase tracking-[0.2em] bg-green-50 text-green-600 px-3 py-1 rounded-full font-bold">
+                          {order.status}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-beige">
+                  <Package size={48} className="mx-auto text-gold/20 mb-6" strokeWidth={1} />
+                  <p className="text-lg font-serif mb-2">No orders yet</p>
+                  <p className="text-sm text-charcoal/40 mb-8">You haven't placed your first order.</p>
+                  <button 
+                    onClick={() => onNavigate('shop')}
+                    className="btn-primary"
                   >
-                    <div className="flex gap-6 items-center">
-                      <div className="w-16 aspect-[3/4] bg-beige rounded-sm overflow-hidden border border-charcoal/5 flex items-center justify-center text-gold/20">
-                         <Package size={24} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-gold font-bold mb-1">{order.id}</p>
-                        <h4 className="font-serif text-xl">{order.item}</h4>
-                        <p className="text-xs text-charcoal/40">{order.date}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-serif mb-1">{order.total}</p>
-                      <span className="text-[9px] uppercase tracking-[0.2em] bg-green-50 text-green-600 px-3 py-1 rounded-full font-bold">
-                        {order.status}
-                      </span>
-                    </div>
-                    <button className="btn-outline py-2 px-6 text-[9px] md:w-auto w-full">
-                      View Details
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
+                    Start Shopping
+                  </button>
+                </div>
+              )}
             </motion.section>
           )}
 
@@ -198,7 +214,14 @@ export default function ProfilePage({
               ) : (
                 <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-beige">
                   <Heart size={48} className="mx-auto text-gold/20 mb-6" strokeWidth={1} />
-                  <p className="text-charcoal/40 font-light italic">Your wishlist is currently empty.</p>
+                  <p className="text-lg font-serif mb-2">No favorites yet</p>
+                  <p className="text-sm text-charcoal/40 mb-8">Save products you love here.</p>
+                  <button 
+                    onClick={() => onNavigate('shop')}
+                    className="btn-primary"
+                  >
+                    Browse Collection
+                  </button>
                 </div>
               )}
             </motion.section>
@@ -217,36 +240,47 @@ export default function ProfilePage({
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {addresses.map((address) => (
-                  <div key={address.id} className="bg-white p-8 rounded-2xl border border-beige shadow-sm relative group">
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="flex items-center gap-3">
-                        <MapPin size={20} className="text-gold" />
-                        <h4 className="font-serif text-xl">{address.type}</h4>
+              {addresses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {addresses.map((address) => (
+                    <div key={address.id} className="bg-white p-8 rounded-2xl border border-beige shadow-sm relative group">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="flex items-center gap-3">
+                          <MapPin size={20} className="text-gold" />
+                          <h4 className="font-serif text-xl">{address.type}</h4>
+                        </div>
+                        {address.isDefault && (
+                          <span className="text-[8px] uppercase tracking-[0.2em] bg-gold/10 text-gold px-2 py-1 rounded-full font-bold">Default</span>
+                        )}
                       </div>
-                      {address.isDefault && (
-                        <span className="text-[8px] uppercase tracking-[0.2em] bg-gold/10 text-gold px-2 py-1 rounded-full font-bold">Default</span>
-                      )}
+                      <div className="space-y-1 text-sm text-charcoal/60 font-light leading-relaxed">
+                        <p className="font-medium text-charcoal">{address.name}</p>
+                        <p>{address.street}</p>
+                        <p>{address.city}, {address.postalCode}</p>
+                        <p>{address.country}</p>
+                      </div>
+                      <div className="mt-8 pt-6 border-t border-beige flex gap-6">
+                        <button className="text-[9px] uppercase tracking-[0.1em] font-bold text-charcoal/40 hover:text-gold transition-colors">Edit</button>
+                        <button 
+                          onClick={() => onRemoveAddress(address.id)}
+                          className="text-[9px] uppercase tracking-[0.1em] font-bold text-charcoal/40 hover:text-red-400 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                    <div className="space-y-1 text-sm text-charcoal/60 font-light leading-relaxed">
-                      <p className="font-medium text-charcoal">{address.name}</p>
-                      <p>{address.street}</p>
-                      <p>{address.city}, {address.postalCode}</p>
-                      <p>{address.country}</p>
-                    </div>
-                    <div className="mt-8 pt-6 border-t border-beige flex gap-6">
-                      <button className="text-[9px] uppercase tracking-[0.1em] font-bold text-charcoal/40 hover:text-gold transition-colors">Edit</button>
-                      <button 
-                        onClick={() => onRemoveAddress(address.id)}
-                        className="text-[9px] uppercase tracking-[0.1em] font-bold text-charcoal/40 hover:text-red-400 transition-colors"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-beige">
+                  <MapPin size={48} className="mx-auto text-gold/20 mb-6" strokeWidth={1} />
+                  <p className="text-lg font-serif mb-2">No saved addresses</p>
+                  <p className="text-sm text-charcoal/40 mb-8">Add your first delivery address.</p>
+                  <button className="btn-primary">
+                    Add Address
+                  </button>
+                </div>
+              )}
             </motion.section>
           )}
 
@@ -326,7 +360,7 @@ export default function ProfilePage({
             </motion.section>
           )}
 
-          {/* Privileges Banner (always visible or context-dependent) */}
+          {/* Privileges Banner */}
           {activeSection === 'orders' && (
             <section>
               <h3 className="text-3xl font-serif tracking-tight mb-8 border-b border-beige pb-6">Inner Circle Privileges</h3>

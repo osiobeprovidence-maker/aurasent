@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Product, CartItem, Category, Address } from './types';
@@ -38,24 +38,23 @@ export default function App() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('home');
   const [userProfile, setUserProfile] = useState({
-    name: 'Julian Rose',
-    email: 'j.rose@atelier.com',
+    name: '',
+    email: '',
     image: null as string | null
   });
-  const [addresses, setAddresses] = useState<Address[]>([
-    { 
-      id: '1', 
-      type: 'Home', 
-      name: 'Main Residence', 
-      street: '128 Rue de la Pompe', 
-      city: 'Paris', 
-      postalCode: '75116', 
-      country: 'France', 
-      isDefault: true 
-    }
-  ]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<Category | 'All'>('All');
+
+  useEffect(() => {
+    if (user) {
+      setUserProfile({
+        name: user.displayName || user.email?.split('@')[0] || 'User',
+        email: user.email || '',
+        image: user.photoURL || null,
+      });
+    }
+  }, [user]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
